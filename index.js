@@ -21,7 +21,10 @@ const config = {};
 
 const client = MongoClient(uri, config);
 
-api.listen(80)
+const port = 80;
+api.listen(port, () => {
+	console.log(`server started on port ${port}`)
+});
 
 api.use( express.urlencoded({ extended : true }) )
 api.use( express.json() )
@@ -38,7 +41,6 @@ api.get("/api/peliculas", function(request, response){
 		collection.find().toArray((err, result) => {
 			if (err) throw err;
 	
-			console.log({ result }, result.length);
 			client.close();
 			response.json( result )
 		});
@@ -46,16 +48,24 @@ api.get("/api/peliculas", function(request, response){
 })
 
 api.post("/api/peliculas", function(request, response){
+
+	let obj = request.body
+
+	client.connect(err => {
+		if(err) throw err;
 	
-	let pelicula = request.body
+		const db = client.db(dbName);
+		const collection = db.collection(collectionName);
+	
+		// const obj = { name: "Carlitos", address: "Corrientes 1234" };
+		collection.insertOne(obj, (err, result) => {
+			if (err) throw err;
+	
+			client.close();
 
-	let id = new Date().valueOf() //<-- ej: 1581027801281
-
-	peliculas.put(id, pelicula, function(error){
-		response.json({ rta : "error", message : error})
+			response.json("Register created")
+		})
 	})
-
-	response.json({ rta : "ok", message : "Pelicula creada", id })
 })
 
 api.put("/api/peliculas/:id?", function(request, response){
